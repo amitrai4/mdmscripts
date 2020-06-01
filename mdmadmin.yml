@@ -3,11 +3,14 @@
   remote_user: root
   hosts: testserver 
   tasks:
-     - name: create dir on remote machiens
-       command: mkdir -p /tmp/mdmscripts
+     - name: ansible create directory with mode setting example
+        file:
+          path: /tmp/mdmscripts
+          state: directory
+          mode: "u=rwx,g=rwx"
        
      - name: Transfer executable script script
        copy: src=/tmp/mdmscripts/mdmadmin dest=/tmp/mdmscripts mode=0777
  
      - name: Execute the script
-       command: sh /tmp/mdmscripts/mdmadmin $task
+       command: sh /tmp/mdmscripts/mdmadmin "{{ task  }}"
