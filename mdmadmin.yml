@@ -4,10 +4,10 @@
   hosts: testserver 
   tasks:
      - name: ansible create directory with mode setting example
-        file:
-          path: /tmp/mdmscripts
-          state: directory
-          mode: "u=rwx,g=rwx"
+       file:
+         path: /tmp/mdmscripts
+         state: directory
+         mode: "u=rwx,g=rwx"
        
      - name: Transfer executable script script
        copy: src=/tmp/mdmscripts/mdmadmin dest=/tmp/mdmscripts mode=0777
