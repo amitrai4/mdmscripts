@@ -4,10 +4,10 @@
   hosts: testserver 
   tasks:
      - name: create dir on remote machiens
-       command: sh mkdir -p /tmp/mdmscripts
+       command: mkdir -p /tmp/mdmscripts
        
      - name: Transfer executable script script
        copy: src=/tmp/mdmscripts/mdmadmin dest=/tmp/mdmscripts mode=0777
  
      - name: Execute the script
-       command: sh /tmp/mdmscripts/mdmadmin $action
+       command: sh /tmp/mdmscripts/mdmadmin $task
