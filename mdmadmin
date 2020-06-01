@@ -1,0 +1,137 @@
+#!/bin/bash
+
+service_stop_mdm()
+	{
+	STOP_NodeAgent=$(find /opt/IBM -name stopNode.sh |grep Node01)
+	if [[ $(ps -ef|grep -v grep|grep -i "Node01 nodeagent"|wc -l) > 0 ]]
+	then
+		echo "***********Stopping NodeAgent"
+		su -s "/bin/bash" -c "$STOP_NodeAgent -username mdmadmin -password mdmp1"
+		if [ $? != 0 ]
+		then
+			echo "Stopping of NodeAgent failed"
+			exit 1
+		fi
+	fi
+
+	STOP_DMGR=$(find /opt/IBM -name stopManager.sh |grep 'Dmgr01')
+	if [[ $(ps -ef|grep -v grep|grep -i Dmgr|wc -l) > 0 ]]
+	then
+		echo "************Stopping Dmgr01"
+		su -s "/bin/bash" -c "$STOP_DMGR -username mdmadmin -password mdmp1"
+		if [ $? != 0 ]
+                then
+                        echo "Stopping of Dmgr failed"
+                        exit 1
+                fi
+	fi
+}
+
+service_stop_db()
+	{
+	DB2_ACTIVE_LIST=(`su - db2inst1 -c "db2 list active databases"|grep "Applications connected currently"|awk -F '= ' '{print $2}' | tr '\n' ' '`)
+	for t in "${DB2_ACTIVE_LIST[@]}"
+	do
+        	if [ $t != 0 ]
+        	then
+                	echo $t
+                	echo "*************Kill database connection to application"
+                	su - db2inst1 -c "db2 force application all"
+                	if [ $? != 0 ]
+                	then
+                        	echo "Kill database connection to application failed"
+                        	exit 1
+                	fi
+        	fi
+	done
+
+if [[ $(ps -ef|grep -v grep|grep -i db2sysc|wc -l) > 0 ]]
+then
+        echo "***********Stopping db2"
+        su - db2inst1 -c "db2stop"
+        if [ $? != 0 ]
+        then
+                echo "db2stop failed"
+                exit 1
+        fi
+fi
+
+
+}
+###########################################################################################################
+service_start_db()
+	{
+	if [[ $(ps -ef|grep -v grep|grep db2sysc|wc -l) == 0 ]]
+	then
+		echo "**********Starting db2"
+        	su - db2inst1 -c "db2start"
+        	if [ $? != 0 ]
+        	then
+                	echo "DB2 Start failed in $SRVNAME"
+                	exit 1
+        	fi
+	fi
+}
+
+service_start_mdm()
+	{
+        START_Dmgr=$(find /opt/IBM/ -name startManager.sh|egrep 'Dmgr01')
+        if [[ $(ps -ef|grep -v grep| grep -i 'dmgr'|wc -l) == 0 ]]
+        then
+		echo "***********Starting Dmgr01"
+                su -s "/bin/bash" -c "$START_Dmgr" ws8admin
+                if [ $? != 0 ]
+                then
+                        echo "Starting of Dmgr failed in MDM Server"
+                        exit 1
+                fi
+        fi
+
+        START_NodeAgent=$(find /opt/IBM -name startNode.sh |grep Node01)
+        if [[ $(ps -ef|grep -v grep|grep -i "Node01 nodeagent"|wc -l) == 0 ]]
+        then
+		echo "***********Starting NodeAgent"
+                su -s "/bin/bash" -c "$START_NodeAgent" ws8admin
+                if [ $? != 0 ]
+                then
+                        echo "Starting of NodeAgent failed"
+                        exit 1
+                fi
+        fi
+
+}
+
+
+
+#############################
+#Main Function
+
+if [ $# -lt 1 ]
+then
+        echo "Usage : $0 start/stop"
+        exit
+fi
+
+
+case "$1" in
+
+    start) 
+	echo "Starting Services"
+ 	service_start_db
+	service_start_mdm
+    ;;
+    stop)  
+	echo "Stopping Services"
+	service_stop_mdm
+	service_stop_db
+    ;;
+    restart)
+	echo "Restarting Services"
+        service_stop_mdm
+        service_stop_db
+	sleep 10
+	service_start_db
+	service_start_mdm
+    ;;
+     *) echo "Invalid parameter"
+esac
