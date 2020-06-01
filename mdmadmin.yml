@@ -5,7 +5,7 @@
   tasks:
      - name: Transfer executable script script
        command: sh mkdir -p /tmp/mdmscripts
-       copy: src=/tmp/scripts/check_memory dest=/root mode=0777
+       copy: src=/tmp/mdmscripts/mdmadmin dest=/tmp/mdmscripts mode=0777
  
      - name: Execute the script
-       command: sh /root/check_memory
+       command: sh /tmp/mdmscripts/mdmadmin $action
